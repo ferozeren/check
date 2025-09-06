@@ -1,0 +1,15 @@
+[package]
+name = "check"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reqwest = { version = "0.12.23", features = ["blocking"] }
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+strip = true
+debug = false
+lto = true
+panic = "abort"
