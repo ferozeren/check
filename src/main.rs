@@ -1,4 +1,4 @@
-use reqwest::{self};
+use reqwest::{self, blocking::Client};
 use std::{
     error::Error,
     process::{Command, Stdio},
@@ -42,7 +42,12 @@ fn fetch_response(url: String, mut tries: u64, waiting_period: u64) -> Result<()
             std::thread::sleep(Duration::from_secs(waiting_period));
         }
         println!("Trying to Fetch response from {url}...");
-        let response = match reqwest::blocking::get(url.clone()) {
+
+        let client = Client::builder()
+            .timeout(Duration::from_secs(waiting_period))
+            .build()?;
+
+        let response = match client.get(url.clone()).send() {
             Ok(response) => response,
             Err(_) => {
                 println!("Failed to get any response");
