@@ -15,7 +15,8 @@ fn add_protocol(url: String) -> String {
 }
 
 fn fetch_response(url: String, mut tries: u64, waiting_period: u64) -> Result<(), Box<dyn Error>> {
-    let final_delay = tries;
+    let timeout: u64 = 10; // By default blocking::get timoeout is 30 secs
+    let final_delay: u64 = tries;
 
     let url: reqwest::Url = match reqwest::Url::parse(&url) {
         Ok(val) => val,
@@ -27,9 +28,12 @@ fn fetch_response(url: String, mut tries: u64, waiting_period: u64) -> Result<()
 
     let mut first_run: bool = true;
 
+    let client = Client::builder()
+        .timeout(Duration::from_secs(timeout))
+        .build()?;
+
     loop {
-        if first_run {
-        } else {
+        if !first_run {
             tries -= 1;
             if tries == 0 {
                 println!("Tries completed with delay of {waiting_period}s for each try!");
@@ -43,21 +47,17 @@ fn fetch_response(url: String, mut tries: u64, waiting_period: u64) -> Result<()
         }
         println!("Trying to Fetch response from {url}...");
 
-        let client = Client::builder()
-            .timeout(Duration::from_secs(waiting_period))
-            .build()?;
-
         let response = match client.get(url.clone()).send() {
             Ok(response) => response,
-            Err(_) => {
-                println!("Failed to get any response");
+            Err(err) => {
+                println!("Failed to get any response: {}", err);
                 first_run = false;
                 continue;
                 // std::process::exit(0);
             }
         };
 
-        println!("Checking response status...");
+        // println!("Checking response status...");
         if response.status() != 200 {
             println!("Error: {}", response.status());
             first_run = false;
